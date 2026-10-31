@@ -1,6 +1,5 @@
 from flask import Flask, request
 from models import db, Task, Employee
-
 app = Flask(__name__)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
@@ -14,6 +13,7 @@ with app.app_context():
 def find_employee(employee_id):
     employee = Employee.query.get(employee_id)
     return employee
+
 def find_task(task_id, employee_id=None):
     if employee_id is not None:
         employee = find_employee(employee_id)
@@ -22,6 +22,19 @@ def find_task(task_id, employee_id=None):
         task = Task.query.filter_by(id=task_id, employee_id=employee_id).first()
         return task
     return Task.query.get(task_id)
+
+def check_priority(data):
+    priority = data.get('priority')
+    if priority is None:
+        return None, None
+    try:
+        priority = int(priority)
+        if not (1 <= priority <= 5):
+            return None, "Для создания задачи укажите приоритет от 1 до 5!"
+        return priority, None  
+    except (ValueError, TypeError):
+        return None, "Приоритет должен быть целым числом от 1 до 5!"
+
 #======
 
 @app.route('/')
@@ -51,7 +64,7 @@ def get_employee_task(employee_id):
 def find_tasks(employee_id, task_id):   
     task = find_task(task_id=task_id, employee_id=employee_id)
     if not task:
-        return {"error":"Задача не найдена"}
+        return {"error":"Задача не найдена"}, 404
     return task.to_dict(), 200
 
 #GET МАРШРУТЫ /TASKS
@@ -89,7 +102,10 @@ def create_task():
     employee_exists = Employee.query.get(emp_id)
     if not employee_exists:
         return {"error": f"Сотрудника с {emp_id} не существует"}, 404
-    new_task = Task(title=data.get('title'), priority=data.get('priority'), employee_id=emp_id)
+    validated_priority, error_msg = check_priority(data)
+    if error_msg:
+        return {"error":error_msg}, 400
+    new_task = Task(title=data.get('title'), priority=validated_priority, employee_id=emp_id)
     db.session.add(new_task)
     db.session.commit()
     return new_task.to_dict(), 201
@@ -113,4 +129,4 @@ def delete_task(task_id):
     db.session.commit()
     return {"message": f"Задача {task_id} успешно удалена"}, 200
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)

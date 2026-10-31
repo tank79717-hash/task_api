@@ -26,6 +26,7 @@ def test_create_task(client):
     emp_res = client.post('/employees', json={'name':'Бублик', 'role':'Водитель'})
     emp_id = emp_res.get_json()['id']
     response = client.post('/tasks', json={'title':'Очистить сад', 'employee_id': emp_id})
+    assert response.get_json()["priority"] == 3
     assert response.status_code == 201
 
 # тест создания задачи с несуществующим employee_id — ожидается 404

@@ -1,0 +1,17 @@
+name: test
+on: push
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Скачать код
+      uses: actions/checkout@v4
+    - name: Поставить python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+    - name: Скачать зависимости
+      run: pip install -r requirements.txt
+    - name: Запустить тест
+      run: pytest

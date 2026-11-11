@@ -1,15 +1,16 @@
+import os 
 import pytest
+os.environ["DATABASE_URL"] = "sqlite:///:memory:"
 from models import Employee, Task, db
 from app import app
 
 @pytest.fixture
 def client():
     app.config['TESTING'] = True
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
     
     with app.test_client() as client:
         with app.app_context():
-            db.create_all() 
+            db.create_all()
         yield client       
         with app.app_context():
             db.drop_all()
